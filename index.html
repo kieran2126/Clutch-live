@@ -1,0 +1,315 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#101114">
+<title>Clutch Live</title>
+<style>
+:root {
+  --bg:#101114; --panel:#1a1c21; --panel2:#22252b;
+  --orange:#ff6b22; --text:#f5f5f5; --muted:#a0a3aa;
+  --green:#43cf83; --red:#ff6262; --line:#30333a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:24px 18px 16px;background:linear-gradient(135deg,#24201e,#111216);border-bottom:1px solid var(--line)}
+.brand{font-size:32px;font-weight:900;letter-spacing:-1.5px}
+.brand span{color:var(--orange)}
+.subtitle{color:var(--muted);font-size:13px;margin-top:4px}
+nav{display:flex;gap:8px;padding:12px;position:sticky;top:0;background:#101114;z-index:5;border-bottom:1px solid var(--line)}
+nav button,.filter button{border:0;border-radius:10px;padding:11px 15px;background:var(--panel);color:var(--muted);font-weight:700}
+nav button.active,.filter button.active{background:var(--orange);color:#fff}
+main{max-width:900px;margin:auto;padding:16px}
+.section-title{font-size:21px;font-weight:800;margin:10px 0 14px}
+.muted{color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:15px;margin-bottom:12px}
+.game-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted);margin-bottom:14px}
+.status{color:var(--orange);font-weight:800}
+.teams{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.team{text-align:center;min-width:0}
+.team img{width:42px;height:42px;object-fit:contain}
+.team-name{font-size:13px;font-weight:700;margin-top:6px}
+.score{font-size:25px;font-weight:900;margin-top:5px}
+.vs{color:var(--muted);font-size:12px}
+.prediction{margin-top:15px;padding-top:13px;border-top:1px solid var(--line)}
+.pred-title{font-size:12px;color:var(--muted);margin-bottom:9px}
+.prob-row{display:flex;justify-content:space-between;font-size:13px;font-weight:800;margin-bottom:6px}
+.bar{height:9px;border-radius:20px;background:#34373e;overflow:hidden;display:flex}
+.bar-home{background:var(--orange)}
+.bar-away{background:#6c7bff}
+.explanation{font-size:11px;color:var(--muted);margin-top:8px}
+.filter{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+select,input{background:var(--panel);color:var(--text);border:1px solid var(--line);padding:11px;border-radius:10px;font-size:14px;max-width:100%}
+.list-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.list-row:last-child{border:0}
+.list-row img{width:42px;height:42px;object-fit:contain}
+.list-row .grow{flex:1;min-width:0}
+.list-row strong{display:block}
+.small{font-size:12px;color:var(--muted);margin-top:3px}
+.player-photo{width:48px!important;height:48px!important;border-radius:50%;object-fit:cover!important;background:#30333a}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.stat{background:var(--panel2);border-radius:10px;padding:12px;text-align:center}
+.stat strong{display:block;font-size:19px}
+.stat span{font-size:11px;color:var(--muted)}
+button,select{cursor:pointer}
+button:disabled{opacity:.5}
+.message{text-align:center;color:var(--muted);padding:25px 10px;font-size:14px}
+.refresh{color:var(--orange);background:none;border:0;font-weight:700;padding:8px 0}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
+@media(min-width:650px){main{padding:22px}.teams img{width:52px;height:52px}.team-name{font-size:15px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">CLUTCH<span> LIVE</span></div>
+  <div class="subtitle">Toute l'actualité NBA, en direct</div>
+</header>
+
+<nav>
+  <button class="active" data-tab="scores">Scores</button>
+  <button data-tab="players">Joueurs</button>
+  <button data-tab="standings">Classement</button>
+</nav>
+
+<main>
+  <section id="scores" class="page">
+    <div class="section-title">Scores NBA</div>
+    <div class="muted" id="score-date">Chargement des matchs…</div>
+    <button class="refresh" onclick="loadScores()">↻ Actualiser</button>
+    <div id="games"><div class="message">Chargement des rencontres…</div></div>
+  </section>
+
+  <section id="players" class="page" hidden>
+    <div class="section-title">Joueurs NBA</div>
+    <div class="filter">
+      <select id="team-select"><option value="">Choisir une équipe</option></select>
+    </div>
+    <div id="roster"><div class="message">Choisis une équipe pour afficher son effectif.</div></div>
+    <div id="player-detail"></div>
+  </section>
+
+  <section id="standings" class="page" hidden>
+    <div class="section-title">Classement NBA</div>
+    <div class="filter">
+      <button class="active" data-conf="all">Tous</button>
+      <button data-conf="East">Est</button>
+      <button data-conf="West">Ouest</button>
+    </div>
+    <div id="standings-list"><div class="message">Chargement du classement…</div></div>
+  </section>
+</main>
+
+<footer>Clutch Live · Données sportives fournies par ESPN</footer>
+
+<script>
+const API="https://site.api.espn.com/apis/site/v2/sports/basketball/nba";
+const WEBAPI="https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba";
+let teamRates={}, currentConference="all";
+
+async function getJSON(url){
+  const response=await fetch(url);
+  if(!response.ok) throw new Error("Erreur réseau");
+  return response.json();
+}
+function esc(value){
+  return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function teamLogo(team){
+  return team?.logo || (team?.id ? `https://a.espncdn.com/i/teamlogos/nba/500/${team.id}.png` : "");
+}
+function logoHTML(team){
+  const src=teamLogo(team);
+  return src?`<img src="${esc(src)}" alt="" onerror="this.style.visibility='hidden'">`:"";
+}
+function percent(value){
+  let n=Number(value);
+  if(!Number.isFinite(n)) return null;
+  if(n>1.5) n/=100;
+  return Math.max(0,Math.min(1,n));
+}
+function predict(home,away,live=false,period=0,clock="",homeScore=0,awayScore=0){
+  const h=teamRates[home.id], a=teamRates[away.id];
+  if(h==null||a==null) return null;
+  let strength=(h-a)*3.2+0.06;
+  if(live){
+    const remaining=Math.max(0.5,(4-Math.max(0,period-1))*12);
+    const margin=homeScore-awayScore;
+    strength+=margin/(remaining*3.2);
+  }
+  const p=1/(1+Math.exp(-strength));
+  return Math.round(Math.max(.01,Math.min(.99,p))*100);
+}
+async function loadRates(){
+  try{
+    const data=await getJSON(`${API.replace("/site/v2","/v2")}/standings`);
+    function walk(node){
+      if(!node)return;
+      if(node.entries) node.entries.forEach(entry=>{
+        const id=entry.team?.id;
+        const stats=entry.stats||[];
+        const item=stats.find(s=>["winPercent","winPct"].includes(s.name));
+        if(id&&item) teamRates[id]=percent(item.value);
+      });
+      (node.children||[]).forEach(walk);
+    }
+    (data.children||[]).forEach(walk);
+  }catch(e){console.log("Classement indisponible",e)}
+}
+function statusText(status){
+  const state=status?.type?.state;
+  if(state==="in") return `EN DIRECT · ${status.displayClock||""} · P${status.period||""}`;
+  if(state==="post") return "TERMINÉ";
+  return status?.type?.shortDetail||"À VENIR";
+}
+async function loadScores(){
+  const target=document.getElementById("games");
+  target.innerHTML='<div class="message">Chargement des rencontres…</div>';
+  try{
+    const data=await getJSON(`${API}/scoreboard`);
+    const events=data.events||[];
+    document.getElementById("score-date").textContent=
+      new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+    if(!events.length){target.innerHTML='<div class="message">Aucun match programmé pour cette date.</div>';return}
+    target.innerHTML=events.map(event=>{
+      const comp=event.competitions?.[0];
+      const competitors=comp?.competitors||[];
+      const home=competitors.find(t=>t.homeAway==="home");
+      const away=competitors.find(t=>t.homeAway==="away");
+      if(!home||!away)return "";
+      const state=event.status?.type?.state;
+      const hs=Number(home.score||0),as=Number(away.score||0);
+      const prediction=predict(home.team,away.team,state==="in",event.status?.period||0,event.status?.displayClock,hs,as);
+      const homePct=prediction??50,awayPct=100-homePct;
+      const showPrediction=state!=="post"&&prediction!==null;
+      return `<article class="card">
+        <div class="game-top"><span>${esc(comp?.venue?.fullName||"NBA")}</span><span class="status">${esc(statusText(event.status))}</span></div>
+        <div class="teams">
+          <div class="team">${logoHTML(away.team)}<div class="team-name">${esc(away.team.displayName)}</div><div class="score">${esc(away.score??"–")}</div></div>
+          <div class="vs">VS</div>
+          <div class="team">${logoHTML(home.team)}<div class="team-name">${esc(home.team.displayName)}</div><div class="score">${esc(home.score??"–")}</div></div>
+        </div>
+        ${showPrediction?`<div class="prediction">
+          <div class="pred-title">${state==="in"?"Estimation en direct":"Probabilité estimée de victoire"}</div>
+          <div class="prob-row"><span>${esc(away.team.abbreviation)} ${awayPct}%</span><span>${esc(home.team.abbreviation)} ${homePct}%</span></div>
+          <div class="bar"><div class="bar-away" style="width:${awayPct}%"></div><div class="bar-home" style="width:${homePct}%"></div></div>
+          <div class="explanation">Estimation indicative basée sur le bilan des équipes${state==="in"?" et le score actuel":""}. Ce n'est pas une cote officielle.</div>
+        </div>`:""}
+      </article>`;
+    }).join("")||'<div class="message">Aucun match disponible.</div>';
+  }catch(e){
+    target.innerHTML='<div class="message">Impossible de récupérer les scores. Vérifie ta connexion et réessaie.</div>';
+  }
+}
+
+async function loadTeams(){
+  try{
+    const data=await getJSON(`${API}/teams?limit=30`);
+    const teams=data.sports?.[0]?.leagues?.[0]?.teams||[];
+    const select=document.getElementById("team-select");
+    select.innerHTML='<option value="">Choisir une équipe</option>'+teams.map(item=>{
+      const t=item.team;
+      return `<option value="${esc(t.id)}">${esc(t.displayName)}</option>`;
+    }).join("");
+  }catch(e){document.getElementById("roster").innerHTML='<div class="message">Impossible de charger les équipes.</div>'}
+}
+document.getElementById("team-select").addEventListener("change",e=>loadRoster(e.target.value));
+async function loadRoster(teamId){
+  const target=document.getElementById("roster");
+  document.getElementById("player-detail").innerHTML="";
+  if(!teamId){target.innerHTML='<div class="message">Choisis une équipe pour afficher son effectif.</div>';return}
+  target.innerHTML='<div class="message">Chargement de l’effectif…</div>';
+  try{
+    const data=await getJSON(`${API}/teams/${teamId}/roster`);
+    const athletes=data.athletes||[];
+    target.innerHTML=athletes.map(p=>`
+      <div class="list-row">
+        <img class="player-photo" src="${esc(p.headshot?.href||"")}" alt="" onerror="this.style.visibility='hidden'">
+        <div class="grow"><strong>${esc(p.fullName)}</strong><div class="small">${esc(p.position?.abbreviation||"")} · N° ${esc(p.jersey||"—")}</div></div>
+        <button class="refresh" onclick="loadPlayer('${esc(p.id)}','${esc(p.fullName)}')">Stats ›</button>
+      </div>`).join("")||'<div class="message">Effectif non disponible.</div>';
+  }catch(e){target.innerHTML='<div class="message">Impossible de charger cet effectif.</div>'}
+}
+async function loadPlayer(id,name){
+  const target=document.getElementById("player-detail");
+  target.innerHTML='<div class="message">Chargement des statistiques…</div>';
+  try{
+    const data=await getJSON(`${WEBAPI}/athletes/${id}/stats`);
+    const categories=data.categories||data.statistics?.splits?.categories||[];
+    const values={};
+    categories.forEach(cat=>{
+      const labels=cat.labels||[];
+      const totals=cat.totals||[];
+      labels.forEach((label,i)=>values[label]=totals[i]);
+    });
+    const find=(...keys)=>{for(const key of keys)if(values[key]!=null)return values[key];return "—"};
+    target.innerHTML=`<div class="card">
+      <div class="section-title">${esc(name)}</div>
+      <div class="muted">Statistiques de saison · selon les données disponibles</div>
+      <div class="stats-grid">
+        <div class="stat"><strong>${esc(find("PTS","PPG"))}</strong><span>Points</span></div>
+        <div class="stat"><strong>${esc(find("REB","RPG"))}</strong><span>Rebonds</span></div>
+        <div class="stat"><strong>${esc(find("AST","APG"))}</strong><span>Passes</span></div>
+        <div class="stat"><strong>${esc(find("FG%"))}</strong><span>Adresse</span></div>
+        <div class="stat"><strong>${esc(find("3P%"))}</strong><span>3 points</span></div>
+        <div class="stat"><strong>${esc(find("FT%"))}</strong><span>Lancers francs</span></div>
+      </div>
+    </div>`;
+  }catch(e){target.innerHTML='<div class="message">Statistiques indisponibles pour ce joueur.</div>'}
+}
+
+async function loadStandings(){
+  const target=document.getElementById("standings-list");
+  target.innerHTML='<div class="message">Chargement du classement…</div>';
+  try{
+    const data=await getJSON(`${API.replace("/site/v2","/v2")}/standings`);
+    const rows=[];
+    function walk(node,conference=""){
+      if(!node)return;
+      const label=node.name||node.abbreviation||conference;
+      if(node.entries) node.entries.forEach(entry=>rows.push({entry,conference:label}));
+      (node.children||[]).forEach(child=>walk(child,label));
+    }
+    (data.children||[]).forEach(node=>walk(node,node.name||""));
+    const filtered=rows.filter(r=>{
+      const name=(r.conference||"").toLowerCase();
+      return currentConference==="all"||
+        (currentConference==="East"&&(name.includes("east")||name.includes("est")))||
+        (currentConference==="West"&&(name.includes("west")||name.includes("ouest")));
+    });
+    target.innerHTML=filtered.map((r,i)=>{
+      const e=r.entry,t=e.team,stats=e.stats||[];
+      const get=(...names)=>stats.find(s=>names.includes(s.name))?.displayValue??"—";
+      return `<div class="list-row">
+        <strong>${i+1}.</strong>${logoHTML(t)}
+        <div class="grow"><strong>${esc(t.displayName)}</strong><div class="small">${esc(r.conference)}</div></div>
+        <div style="text-align:right"><strong>${esc(get("wins"))}-${esc(get("losses"))}</strong><div class="small">${esc(get("winPercent","winPct"))}</div></div>
+      </div>`;
+    }).join("")||'<div class="message">Classement indisponible.</div>';
+  }catch(e){target.innerHTML='<div class="message">Impossible de récupérer le classement.</div>'}
+}
+
+document.querySelectorAll("nav button").forEach(button=>{
+  button.addEventListener("click",()=>{
+    document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b===button));
+    document.querySelectorAll(".page").forEach(p=>p.hidden=p.id!==button.dataset.tab);
+  });
+});
+document.querySelectorAll("[data-conf]").forEach(button=>{
+  button.addEventListener("click",()=>{
+    currentConference=button.dataset.conf;
+    document.querySelectorAll("[data-conf]").forEach(b=>b.classList.toggle("active",b===button));
+    loadStandings();
+  });
+});
+
+async function init(){
+  await loadRates();
+  await Promise.all([loadScores(),loadTeams(),loadStandings()]);
+  setInterval(async()=>{await loadRates();await loadScores();},30000);
+}
+init();
+</script>
+</body>
+</html>
